@@ -1,0 +1,26 @@
+services:
+  server:
+    build:
+      context: caddy
+      dockerfile: Dockerfile
+
+    ports:
+      - "80:80"
+      - "443:443"
+
+  auth-service:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID}
+      - GOOGLE_OAUTH_CLIENT_SECRET=${GOOGLE_OAUTH_CLIENT_SECRET}
+    networks:
+      - piapp
+
+
+networks:
+  piapp:
+    driver: bridge
