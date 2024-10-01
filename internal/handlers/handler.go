@@ -11,26 +11,43 @@ import (
 	"github.com/pi-prakhar/go-gcp-auth/pkg/utils"
 )
 
-func HandleHome(w http.ResponseWriter, r *http.Request) {
+type AuthHandler struct {
+	services *services.GoogleAuthService
+}
+
+func NewAuthHandler(services *services.GoogleAuthService) *AuthHandler {
+	handler := &AuthHandler{
+		services: services,
+	}
+
+	return handler
+}
+
+func (h *AuthHandler) HandleHome(w http.ResponseWriter, r *http.Request) {
 	var html = `<html><body><a href="/api/v1/auth/google/login">Google Login</a></body></html>`
 	fmt.Fprint(w, html)
 }
 
-func HandleGoogleLogin(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) HandleProtected(w http.ResponseWriter, r *http.Request) {
+	username := r.Header.Get("username")
+	fmt.Fprintf(w, "Welcome %s! You are authenticated.", username)
+}
+
+func (h *AuthHandler) HandleGoogleLogin(w http.ResponseWriter, r *http.Request) {
 	oauth2State, err := utils.GenerateRandomString(32)
 	if err != nil {
 		http.Error(w, "Failed to generate oauth state", http.StatusInternalServerError)
 		return
 	}
-	services.SetOAuthStateCookie(&w, oauth2State)
-	url := services.GetOAuth2Config().AuthCodeURL(oauth2State)
+	h.services.SetOAuthStateCookie(&w, oauth2State)
+	url := h.services.GetOAuth2Config().AuthCodeURL(oauth2State)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
-func HandleGoogleCallback(w http.ResponseWriter, r *http.Request) {
+func (h *AuthHandler) HandleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	// Verify state string
 	state := r.FormValue("state")
-	oauth2State, err := services.GetOAuthStateFromCookie(r)
+	oauth2State, err := h.services.GetOAuthStateFromCookie(r)
 	if err != nil {
 		http.Error(w, "Failed to get state from cookie : "+err.Error(), http.StatusInternalServerError)
 	}
@@ -41,7 +58,7 @@ func HandleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Exchange authorization code for access token
-	oauth2Config := services.GetOAuth2Config()
+	oauth2Config := h.services.GetOAuth2Config()
 	code := r.FormValue("code")
 	token, err := oauth2Config.Exchange(context.Background(), code)
 	if err != nil {
@@ -65,16 +82,11 @@ func HandleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = services.SetJWTToken(w, userInfo.Email)
+	err = h.services.SetJWTToken(w, userInfo.Email)
 	if err != nil {
 		http.Error(w, "Internal Server Error - Failed to set token", http.StatusInternalServerError)
 		return
 	}
 
 	fmt.Fprintf(w, "User Info: %v\n", userInfo)
-}
-
-func HandleProtected(w http.ResponseWriter, r *http.Request) {
-	username := r.Header.Get("username")
-	fmt.Fprintf(w, "Welcome %s! You are authenticated.", username)
 }

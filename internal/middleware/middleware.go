@@ -8,10 +8,11 @@ import (
 	"github.com/pi-prakhar/go-gcp-auth/pkg/utils"
 )
 
-// Middleware to check if the user is authenticated by verifying the JWT
-func AuthMiddleware(next func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
+type AuthMiddleware struct{}
+
+func (m *AuthMiddleware) IsAuthenticated(next func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Retrieve the JWT from the cookie
+		// TODO : coookie name in constants
 		cookie, err := r.Cookie("auth_token")
 		if err != nil {
 			if err == http.ErrNoCookie {

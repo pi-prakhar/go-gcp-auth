@@ -15,7 +15,16 @@ var (
 	oauth2Config *oauth2.Config
 )
 
-func init() {
+type GoogleAuthService struct{}
+
+func NewGoogleAuthService() *GoogleAuthService {
+	googleAuthService := &GoogleAuthService{}
+	googleAuthService.initConfig()
+	return googleAuthService
+}
+
+func (g *GoogleAuthService) initConfig() {
+	//TODO : create constants file to store the scopes
 	oauth2Config = &oauth2.Config{
 		ClientID:     utils.GetClientId(),
 		ClientSecret: utils.GetClientSecret(),
@@ -28,13 +37,12 @@ func init() {
 	}
 }
 
-func GetOAuth2Config() *oauth2.Config {
+func (g *GoogleAuthService) GetOAuth2Config() *oauth2.Config {
 	return oauth2Config
 }
 
-// Set cookie on the user's browser
-func SetOAuthStateCookie(w *http.ResponseWriter, state string) {
-
+func (g *GoogleAuthService) SetOAuthStateCookie(w *http.ResponseWriter, state string) {
+	//TODO : create constants file to store the cookie name
 	cookie := &http.Cookie{
 		Name:     "oauthState",
 		Value:    state,
@@ -45,8 +53,8 @@ func SetOAuthStateCookie(w *http.ResponseWriter, state string) {
 	http.SetCookie(*w, cookie)
 }
 
-// Retrieve cookie from the request
-func GetOAuthStateFromCookie(r *http.Request) (string, error) {
+func (g *GoogleAuthService) GetOAuthStateFromCookie(r *http.Request) (string, error) {
+	//TODO : create constants file to store the cookie name
 	cookie, err := r.Cookie("oauthState")
 	if err != nil {
 		return "", err
@@ -54,7 +62,8 @@ func GetOAuthStateFromCookie(r *http.Request) (string, error) {
 	return cookie.Value, nil
 }
 
-func SetAuthCookie(w *http.ResponseWriter, token string) {
+func (g *GoogleAuthService) SetAuthCookie(w *http.ResponseWriter, token string) {
+	//TODO : create constants file to store the cookie name
 	cookie := &http.Cookie{
 		Name:     "auth_token",
 		Value:    token,
@@ -66,7 +75,8 @@ func SetAuthCookie(w *http.ResponseWriter, token string) {
 	http.SetCookie(*w, cookie)
 }
 
-func generateAuthJWTToken(username string) (string, error) {
+// TODO: getAuthCookie function
+func (g *GoogleAuthService) generateAuthJWTToken(username string) (string, error) {
 
 	expirationTime := time.Now().Add(1 * time.Hour)
 
@@ -87,17 +97,17 @@ func generateAuthJWTToken(username string) (string, error) {
 	}
 
 	return tokenString, nil
-
 }
 
-func SetJWTToken(w http.ResponseWriter, username string) error {
+func (g *GoogleAuthService) SetJWTToken(w http.ResponseWriter, username string) error {
 	// Generate the JWT token
-	tokenString, err := generateAuthJWTToken(username)
+	tokenString, err := g.generateAuthJWTToken(username)
 	if err != nil {
 		return err
 	}
 
 	// Set the JWT as a cookie
+	//TODO : create constants file to store the cookie name
 	http.SetCookie(w, &http.Cookie{
 		Name:     "auth_token",
 		Value:    tokenString,

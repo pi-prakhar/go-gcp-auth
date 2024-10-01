@@ -7,6 +7,8 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    networks:
+      - piapp
 
   auth-service:
     build: 
@@ -18,8 +20,8 @@ services:
       - GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID}
       - GOOGLE_OAUTH_CLIENT_SECRET=${GOOGLE_OAUTH_CLIENT_SECRET}
       - AUTH_SERVICE_PORT=${AUTH_SERVICE_PORT}
-      - AUTH_JWT_KEY = ${AUTH_JWT_KEY}
-      - AUTH_SERVICE_HOST = ${AUTH_SERVICE_HOST}
+      - AUTH_JWT_KEY=${AUTH_JWT_KEY}
+      - AUTH_SERVICE_HOST=${AUTH_SERVICE_HOST}
     networks:
       - piapp
 
