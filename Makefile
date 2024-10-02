@@ -1,6 +1,7 @@
 COMPOSE_FILE=./deployments/docker-compose.yml
+COMPOSE_FILE_PRODUCTION=./deployments/docker-compose.production.yml
 DOCKER_FILE_PATH=./deployments/docker
-PROJECT_NAME=GO-GCP-AUTH
+PROJECT_NAME=go-gcp-auth
 SERVICES := auth server
 TAGS := latest
 BUILD_CONTEXT ?= .
@@ -11,21 +12,27 @@ DOCKER_ACCOUNT=16181181418
 # Start all services in the background
 up-local:
 	@echo "Starting services with Docker Compose..."
-	docker compose -f $(COMPOSE_FILE) --env-file ./env/.env.local up $(FLAGS)
+	docker compose -f $(COMPOSE_FILE) -p ${PROJECT_NAME} --env-file ./env/.env.local up $(FLAGS)
 
 up-debug:
 	@echo "Starting services with Docker Compose..."
-	docker compose -f $(COMPOSE_FILE) --env-file ./env/.env.debug up $(FLAGS)
+	docker compose -f $(COMPOSE_FILE) -p ${PROJECT_NAME} --env-file ./env/.env.debug up $(FLAGS)
 
 up-production:
 	@echo "Starting services with Docker Compose..."
-	docker compose -f $(COMPOSE_FILE) --env-file ./env/.env.production up $(FLAGS)
+	docker compose -f $(COMPOSE_FILE_PRODUCTION) -p ${PROJECT_NAME} --env-file ./env/.env.local up $(FLAGS)
 
 
 # Stop all running services
 down:
 	@echo "Stopping services with Docker Compose..."
-	docker compose -f $(COMPOSE_FILE) down
+	docker compose -f $(COMPOSE_FILE) -p ${PROJECT_NAME} down
+
+clean:
+	@echo "Cleaning all data associated with Docker Compose..."
+	docker compose -f $(COMPOSE_FILE) -p ${PROJECT_NAME} down --volumes --remove-orphans
+	docker network prune
+
 
 # Restart all services
 restart: down up
@@ -57,4 +64,4 @@ list:
 
 # Show logs from all running services
 logs:
-	docker compose -f $(COMPOSE_FILE) logs -f
+	docker compose -f $(COMPOSE_FILE) -p ${PROJECT_NAME} logs -f
