@@ -1,4 +1,4 @@
-Desired structure
+### Desired structure
 
 project-root/
 ├── api/
@@ -75,3 +75,52 @@ project-root/
 ├── go.mod
 ├── buf.yaml
 └── README.md
+
+
+
+# Service Management Commands
+
+Simple guide for managing Docker services using Make commands.
+
+## Commands & Examples
+
+### Start Services
+```bash
+# Local environment
+make up-local FLAGS="-d"  # -d flag runs in background
+
+# Debug environment
+make up-debug FLAGS="-d"
+
+# Production environment
+make up-production FLAGS="-d"
+```
+
+### Stop Services
+```bash
+make down  # Stops all running services
+```
+
+### Build Images
+```bash
+# Basic build
+make build-images
+
+# Build with specific settings
+make build-images \
+  DOCKER_ACCOUNT=myaccount \
+  SERVICES="auth-service api-service" \
+  TAGS="latest v1.0.0" \
+  DOCKER_FILE_PATH=./docker \
+  BUILD_CONTEXT=.
+```
+
+### View Logs
+```bash
+make logs  # Shows logs from all services
+```
+
+### Restart Services
+```bash
+make restart  # Equivalent to make down + up
+```
