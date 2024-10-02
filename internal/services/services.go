@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/pi-prakhar/go-gcp-auth/internal/constants"
 	"github.com/pi-prakhar/go-gcp-auth/internal/models"
 	"github.com/pi-prakhar/go-gcp-auth/pkg/utils"
 	"golang.org/x/oauth2"
@@ -24,14 +25,13 @@ func NewGoogleAuthService() *GoogleAuthService {
 }
 
 func (g *GoogleAuthService) initConfig() {
-	//TODO : create constants file to store the scopes
 	oauth2Config = &oauth2.Config{
 		ClientID:     utils.GetClientId(),
 		ClientSecret: utils.GetClientSecret(),
 		RedirectURL:  utils.GetCallbackURL(),
 		Scopes: []string{
-			"https://www.googleapis.com/auth/userinfo.profile",
-			"https://www.googleapis.com/auth/userinfo.email",
+			constants.GOOGLE_AUTH_SCOPE_EMAIL,
+			constants.GOOGLE_AUTH_SCOPE_PROFILE,
 		},
 		Endpoint: google.Endpoint,
 	}
@@ -42,9 +42,8 @@ func (g *GoogleAuthService) GetOAuth2Config() *oauth2.Config {
 }
 
 func (g *GoogleAuthService) SetOAuthStateCookie(w *http.ResponseWriter, state string) {
-	//TODO : create constants file to store the cookie name
 	cookie := &http.Cookie{
-		Name:     "oauthState",
+		Name:     constants.GOOGLE_OAUTH_STATE_COOKIE_NAME,
 		Value:    state,
 		HttpOnly: true,
 		Path:     "/",
@@ -54,8 +53,7 @@ func (g *GoogleAuthService) SetOAuthStateCookie(w *http.ResponseWriter, state st
 }
 
 func (g *GoogleAuthService) GetOAuthStateFromCookie(r *http.Request) (string, error) {
-	//TODO : create constants file to store the cookie name
-	cookie, err := r.Cookie("oauthState")
+	cookie, err := r.Cookie(constants.GOOGLE_OAUTH_STATE_COOKIE_NAME)
 	if err != nil {
 		return "", err
 	}
@@ -63,9 +61,8 @@ func (g *GoogleAuthService) GetOAuthStateFromCookie(r *http.Request) (string, er
 }
 
 func (g *GoogleAuthService) SetAuthCookie(w *http.ResponseWriter, token string) {
-	//TODO : create constants file to store the cookie name
 	cookie := &http.Cookie{
-		Name:     "auth_token",
+		Name:     constants.GOOGLE_AUTH_TOKEN_COOKIE_NAME,
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,                           // Prevents JavaScript access
@@ -75,7 +72,35 @@ func (g *GoogleAuthService) SetAuthCookie(w *http.ResponseWriter, token string) 
 	http.SetCookie(*w, cookie)
 }
 
-// TODO: getAuthCookie function
+func (g *GoogleAuthService) GetAuthCookie(r *http.Request) (*http.Cookie, error) {
+	authCookie, err := r.Cookie(constants.GOOGLE_AUTH_TOKEN_COOKIE_NAME)
+	if err != nil {
+		return nil, err
+	}
+	return authCookie, nil
+
+}
+
+func (g *GoogleAuthService) SetJWTToken(w http.ResponseWriter, username string) error {
+	// Generate the JWT token
+	tokenString, err := g.generateAuthJWTToken(username)
+	if err != nil {
+		return err
+	}
+
+	// Set the JWT as a cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     constants.GOOGLE_AUTH_TOKEN_COOKIE_NAME,
+		Value:    tokenString,
+		Expires:  time.Now().Add(1 * time.Hour),
+		HttpOnly: true,                    // Ensure the cookie cannot be accessed by JavaScript
+		Secure:   true,                    // Set to true if using HTTPS
+		Path:     "/",                     // The path for which the cookie is valid
+		SameSite: http.SameSiteStrictMode, // Ensure cookie is sent only for same-site requests
+	})
+	return nil
+}
+
 func (g *GoogleAuthService) generateAuthJWTToken(username string) (string, error) {
 
 	expirationTime := time.Now().Add(1 * time.Hour)
@@ -97,25 +122,4 @@ func (g *GoogleAuthService) generateAuthJWTToken(username string) (string, error
 	}
 
 	return tokenString, nil
-}
-
-func (g *GoogleAuthService) SetJWTToken(w http.ResponseWriter, username string) error {
-	// Generate the JWT token
-	tokenString, err := g.generateAuthJWTToken(username)
-	if err != nil {
-		return err
-	}
-
-	// Set the JWT as a cookie
-	//TODO : create constants file to store the cookie name
-	http.SetCookie(w, &http.Cookie{
-		Name:     "auth_token",
-		Value:    tokenString,
-		Expires:  time.Now().Add(1 * time.Hour),
-		HttpOnly: true,                    // Ensure the cookie cannot be accessed by JavaScript
-		Secure:   true,                    // Set to true if using HTTPS
-		Path:     "/",                     // The path for which the cookie is valid
-		SameSite: http.SameSiteStrictMode, // Ensure cookie is sent only for same-site requests
-	})
-	return nil
 }

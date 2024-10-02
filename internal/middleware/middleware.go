@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/pi-prakhar/go-gcp-auth/internal/constants"
 	"github.com/pi-prakhar/go-gcp-auth/internal/models"
 	"github.com/pi-prakhar/go-gcp-auth/pkg/utils"
 )
@@ -12,8 +13,7 @@ type AuthMiddleware struct{}
 
 func (m *AuthMiddleware) IsAuthenticated(next func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// TODO : coookie name in constants
-		cookie, err := r.Cookie("auth_token")
+		cookie, err := r.Cookie(constants.GOOGLE_AUTH_TOKEN_COOKIE_NAME)
 		if err != nil {
 			if err == http.ErrNoCookie {
 				http.Error(w, "Unauthorized - No Token", http.StatusUnauthorized)

@@ -1,21 +1,23 @@
 services:
   server:
+    container_name: server
     build:
-      context: caddy
-      dockerfile: Dockerfile
-
+      context: ../
+      dockerfile: ./deployments/docker/server.Dockerfile
     ports:
       - "80:80"
       - "443:443"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config 
     networks:
       - piapp
 
-  auth-service:
+  auth:
+    container_name: auth
     build: 
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "${AUTH_SERVICE_PORT}:8081"
+      context: ../
+      dockerfile: ./deployments/docker/auth.Dockerfile
     environment:
       - GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID}
       - GOOGLE_OAUTH_CLIENT_SECRET=${GOOGLE_OAUTH_CLIENT_SECRET}
@@ -24,6 +26,10 @@ services:
       - AUTH_SERVICE_HOST=${AUTH_SERVICE_HOST}
     networks:
       - piapp
+
+volumes:
+  caddy_data:
+  caddy_config:
 
 
 networks:
