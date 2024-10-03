@@ -4,20 +4,36 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"os"
+
+	"log"
 )
 
 func GetClientId() string {
-	clientId := os.Getenv("GOOGLE_OAUTH_CLIENT_ID")
-	return clientId
+	clientIdFile := os.Getenv("GOOGLE_OAUTH_CLIENT_ID")
+	clientId, err := os.ReadFile(clientIdFile)
+	if err != nil {
+		log.Println("Failed to load client id : ", err.Error())
+	}
+	return string(clientId)
 }
 
 func GetClientSecret() string {
-	clientSecret := os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET")
-	return clientSecret
+	clientSecretFile := os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET")
+	clientSecret, err := os.ReadFile(clientSecretFile)
+	if err != nil {
+		log.Println("Failed to load client secret : ", err.Error())
+	}
+	return string(clientSecret)
 }
 
 func GetCallbackURL() string {
-	url := os.Getenv("AUTH_SERVICE_HOST") + "/api/v1/auth/google/callback"
+	authServiceHostFile := os.Getenv("AUTH_SERVICE_HOST")
+	authServiceHost, err := os.ReadFile(authServiceHostFile)
+	if err != nil {
+		log.Println("Failed to load auth service host : ", err.Error())
+	}
+	url := string(authServiceHost) + "/api/v1/auth/google/callback"
+	log.Println("callback url:" + url)
 	return url
 }
 
@@ -31,5 +47,10 @@ func GenerateRandomString(n int) (string, error) {
 }
 
 func GetJWTKey() []byte {
-	return []byte(os.Getenv("AUTH_JWT_KEY"))
+	authJWTKeyFile := os.Getenv("AUTH_JWT_KEY")
+	authJWTKey, err := os.ReadFile(authJWTKeyFile)
+	if err != nil {
+		log.Println("Failed to load auth jwt key : ", err.Error())
+	}
+	return authJWTKey
 }

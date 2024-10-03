@@ -14,7 +14,7 @@ ENV CGO_ENABLED=0
 RUN go build -o main ./cmd/auth-service
 
 FROM gcr.io/distroless/base
-USER 1000:1000
-COPY --from=builder /app/main /app/main
 WORKDIR /app
+USER 1000:1000
+COPY --from=builder --chown=1000:1000  /app/main /app/main
 CMD [ "./main" ]

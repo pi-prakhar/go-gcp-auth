@@ -16,8 +16,6 @@ services:
   auth:
     container_name: auth
     build: 
-      context: ../
-      dockerfile: ./deployments/docker/auth.Dockerfile
     environment:
       - GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID}
       - GOOGLE_OAUTH_CLIENT_SECRET=${GOOGLE_OAUTH_CLIENT_SECRET}
