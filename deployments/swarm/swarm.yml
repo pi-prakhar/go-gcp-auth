@@ -16,14 +16,31 @@ services:
     image: 16181181418/go-gcp-auth_auth:latest
     deploy:
       replicas: 1
-    env_file:
-      - ../../env/.env.local
+    secrets:
+      - google_oauth_client_id
+      - google_oauth_client_secret
+      - auth_service_port
+      - auth_jwt_key
+      - auth_service_host
     environment:
-      - GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_OAUTH_CLIENT_ID}
-      - GOOGLE_OAUTH_CLIENT_SECRET=${GOOGLE_OAUTH_CLIENT_SECRET}
-      - AUTH_SERVICE_PORT=${AUTH_SERVICE_PORT}
-      - AUTH_JWT_KEY=${AUTH_JWT_KEY}
-      - AUTH_SERVICE_HOST=${AUTH_SERVICE_HOST}
+      - GOOGLE_OAUTH_CLIENT_ID=/run/secrets/google_oauth_client_id
+      - GOOGLE_OAUTH_CLIENT_SECRET=/run/secrets/google_oauth_client_secret
+      - AUTH_SERVICE_PORT=/run/secrets/auth_service_port
+      - AUTH_JWT_KEY=/run/secrets/auth_jwt_key
+      - AUTH_SERVICE_HOST=/run/secrets/auth_service_host
+
+secrets:
+  google_oauth_client_id:
+    file: ./secrets/google_oauth_client_id.txt
+  google_oauth_client_secret:
+    file: ./secrets/google_oauth_client_secret.txt
+  auth_service_port:
+    file: ./secrets/auth_service_port.txt
+  auth_jwt_key:
+    file: ./secrets/auth_jwt_key.txt
+  auth_service_host:
+    file: ./secrets/auth_service_host.txt
+
 
 volumes:
   caddy_data:
