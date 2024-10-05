@@ -31,30 +31,59 @@ func (h *AuthHandler) HandleHome(w http.ResponseWriter, r *http.Request) {
 
 func (h *AuthHandler) HandleProtected(w http.ResponseWriter, r *http.Request) {
 	username := r.Header.Get("username")
-	fmt.Fprintf(w, "Welcome %s! You are authenticated.", username)
+	res := &utils.SuccessResponse[string]{
+		Message:    "Successfully authenticated",
+		StatusCode: http.StatusOK,
+		Data:       username,
+	}
+	res.Write(w)
+
 }
 
 func (h *AuthHandler) HandleGoogleLogin(w http.ResponseWriter, r *http.Request) {
 	oauth2State, err := utils.GenerateRandomString(32)
+	var res utils.Responder
 	if err != nil {
-		http.Error(w, "Failed to generate oauth state", http.StatusInternalServerError)
+		res = &utils.ErrorResponse{
+			Message:    "Failed to generate oauth2State",
+			StatusCode: http.StatusInternalServerError,
+			Error:      err.Error(),
+		}
+		res.Write(w)
 		return
 	}
 	h.services.SetOAuthStateCookie(&w, oauth2State)
 	url := h.services.GetOAuth2Config().AuthCodeURL(oauth2State)
-	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+
+	res = &utils.SuccessResponse[string]{
+		Message:    "Successfully generated Redirect URL for Google auth",
+		StatusCode: http.StatusOK,
+		Data:       url,
+	}
+	res.Write(w)
 }
 
 func (h *AuthHandler) HandleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	// Verify state string
 	state := r.FormValue("state")
+	var res utils.Responder
 	oauth2State, err := h.services.GetOAuthStateFromCookie(r)
 	if err != nil {
-		http.Error(w, "Failed to get state from cookie : "+err.Error(), http.StatusInternalServerError)
+		res = &utils.ErrorResponse{
+			Message:    "Failed to get state from cookie",
+			StatusCode: http.StatusInternalServerError,
+			Error:      err.Error(),
+		}
+		res.Write(w)
+		return
 	}
 
 	if state != oauth2State {
-		http.Error(w, "State is invalid", http.StatusBadRequest)
+		res = &utils.ErrorResponse{
+			Message:    "State is invalid",
+			StatusCode: http.StatusBadRequest,
+		}
+		res.Write(w)
 		return
 	}
 
@@ -63,7 +92,12 @@ func (h *AuthHandler) HandleGoogleCallback(w http.ResponseWriter, r *http.Reques
 	code := r.FormValue("code")
 	token, err := oauth2Config.Exchange(context.Background(), code)
 	if err != nil {
-		http.Error(w, "Failed to exchange token: "+err.Error(), http.StatusInternalServerError)
+		res = &utils.ErrorResponse{
+			Message:    "Failed to exchange token",
+			StatusCode: http.StatusInternalServerError,
+			Error:      err.Error(),
+		}
+		res.Write(w)
 		return
 	}
 
@@ -71,7 +105,12 @@ func (h *AuthHandler) HandleGoogleCallback(w http.ResponseWriter, r *http.Reques
 	client := oauth2Config.Client(context.Background(), token)
 	resp, err := client.Get(constants.GOOGLE_OAUTH_USER_INFO_ENDPOINT)
 	if err != nil {
-		http.Error(w, "Failed to get user info: "+err.Error(), http.StatusInternalServerError)
+		res = &utils.ErrorResponse{
+			Message:    "Failed to get user info",
+			StatusCode: http.StatusInternalServerError,
+			Error:      err.Error(),
+		}
+		res.Write(w)
 		return
 	}
 	defer resp.Body.Close()
@@ -79,15 +118,31 @@ func (h *AuthHandler) HandleGoogleCallback(w http.ResponseWriter, r *http.Reques
 	// Parse and display user info
 	var userInfo models.GoogleUser
 	if err := json.NewDecoder(resp.Body).Decode(&userInfo); err != nil {
-		http.Error(w, "Failed to parse user info: "+err.Error(), http.StatusInternalServerError)
+		res = &utils.ErrorResponse{
+			Message:    "Failed to parse user info",
+			StatusCode: http.StatusInternalServerError,
+			Error:      err.Error(),
+		}
+		res.Write(w)
 		return
 	}
 
+	// Creating JWT Token
 	err = h.services.SetJWTToken(w, userInfo.Email)
 	if err != nil {
-		http.Error(w, "Internal Server Error - Failed to set token", http.StatusInternalServerError)
+		res = &utils.ErrorResponse{
+			Message:    "Failed to create JWT token",
+			StatusCode: http.StatusInternalServerError,
+			Error:      err.Error(),
+		}
+		res.Write(w)
 		return
 	}
 
-	fmt.Fprintf(w, "User Info: %v\n", userInfo)
+	res = &utils.SuccessResponse[models.GoogleUser]{
+		Message:    "Successfully Fetched Google User Info",
+		StatusCode: http.StatusOK,
+		Data:       userInfo,
+	}
+	res.Write(w)
 }

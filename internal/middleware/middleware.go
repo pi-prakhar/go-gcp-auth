@@ -14,12 +14,24 @@ type AuthMiddleware struct{}
 func (m *AuthMiddleware) IsAuthenticated(next func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie(constants.GOOGLE_AUTH_TOKEN_COOKIE_NAME)
+		var res utils.Responder
 		if err != nil {
+
 			if err == http.ErrNoCookie {
-				http.Error(w, "Unauthorized - No Token", http.StatusUnauthorized)
+				res = &utils.ErrorResponse{
+					Message:    "Unauthorized - No Token",
+					StatusCode: http.StatusUnauthorized,
+					Error:      err.Error(),
+				}
+				res.Write(w)
 				return
 			}
-			http.Error(w, "Bad Request", http.StatusBadRequest)
+			res = &utils.ErrorResponse{
+				Message:    "Bad Request",
+				StatusCode: http.StatusBadRequest,
+				Error:      err.Error(),
+			}
+			res.Write(w)
 			return
 		}
 
@@ -36,16 +48,30 @@ func (m *AuthMiddleware) IsAuthenticated(next func(w http.ResponseWriter, r *htt
 
 		if err != nil {
 			if err == jwt.ErrSignatureInvalid {
-				http.Error(w, "Unauthorized - Invalid Token", http.StatusUnauthorized)
+				res = &utils.ErrorResponse{
+					Message:    "Unauthorized - Invalid Token",
+					StatusCode: http.StatusUnauthorized,
+					Error:      err.Error(),
+				}
+				res.Write(w)
 				return
 			}
-			http.Error(w, "Bad Request", http.StatusBadRequest)
+			res = &utils.ErrorResponse{
+				Message:    "Bad Request",
+				StatusCode: http.StatusBadRequest,
+				Error:      err.Error(),
+			}
+			res.Write(w)
 			return
 		}
 
 		// Check if the token is valid
 		if !token.Valid {
-			http.Error(w, "Unauthorized - Token Expired or Invalid", http.StatusUnauthorized)
+			res = &utils.ErrorResponse{
+				Message:    "Unauthorized - Token Expired or Invalid",
+				StatusCode: http.StatusUnauthorized,
+			}
+			res.Write(w)
 			return
 		}
 
