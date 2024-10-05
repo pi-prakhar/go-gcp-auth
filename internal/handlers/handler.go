@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/pi-prakhar/go-gcp-auth/internal/constants"
 	"github.com/pi-prakhar/go-gcp-auth/internal/models"
 	"github.com/pi-prakhar/go-gcp-auth/internal/services"
 	"github.com/pi-prakhar/go-gcp-auth/pkg/utils"
@@ -68,7 +69,7 @@ func (h *AuthHandler) HandleGoogleCallback(w http.ResponseWriter, r *http.Reques
 
 	// Use the token to get user info
 	client := oauth2Config.Client(context.Background(), token)
-	resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
+	resp, err := client.Get(constants.GOOGLE_OAUTH_USER_INFO_ENDPOINT)
 	if err != nil {
 		http.Error(w, "Failed to get user info: "+err.Error(), http.StatusInternalServerError)
 		return
